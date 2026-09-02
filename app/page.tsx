@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import React, { useState } from "react";
+import { sendEmailAction } from "./api/send/sendEmail";
 
 export default function Home() {
   // 1. STATE & DATA PROYEK (Harus diletakkan di dalam fungsi Home, sebelum return)
@@ -14,6 +15,30 @@ export default function Home() {
     tech: string[];
     highlights: string[];
   } | null>(null);
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus("loading");
+
+    try {
+      const response = await sendEmailAction(email, message);
+
+      if (response.success) {
+        setStatus("success");
+        setEmail("");
+        setMessage("");
+      } else {
+        setStatus("error");
+        console.error("Gagal mengirim:", response.error);
+      }
+    } catch (error) {
+      setStatus("error");
+      console.error("Error jaringan/sistem:", error);
+    }
+  };
 
   const projectData = [
     {
@@ -76,7 +101,6 @@ export default function Home() {
     {
       title: "Kemas Foundation",
       image: "/projects/kemas.jpg",
-      url: "https://www.kemasfoundation.org/",
       shortDesc:
         "Integrated organizational management platform designed to streamline activity reporting and member attendance tracking.",
       fullDesc:
@@ -553,14 +577,14 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 bg-gray-900 border border-gray-800 rounded-xl hover:border-gray-700 transition-colors">
             <div>
               <h4 className="text-lg font-semibold text-white">
-                Head of Organizational Affairs
+                Staff higher education, student affairs, and youth affairs
               </h4>
               <p className="text-sm text-gray-400">
                 Himpunan Mahasiswa Jurusan Teknik Komputer
               </p>
             </div>
             <span className="text-xs font-medium text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full mt-3 sm:mt-0">
-              Jan 2024 - Jan 2025
+              Jan 2024 - Des 2024
             </span>
           </div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 bg-gray-900 border border-gray-800 rounded-xl hover:border-gray-700 transition-colors">
@@ -590,7 +614,10 @@ export default function Home() {
           about backend architecture, database optimizations, or just want to
           say hi, feel free to drop a message!
         </p>
-        <form className="max-w-md mx-auto text-left space-y-4 mb-10">
+        <form
+          onSubmit={handleSubmit}
+          className="max-w-md mx-auto text-left space-y-4 mb-10"
+        >
           <div>
             <label
               htmlFor="email"
@@ -601,6 +628,9 @@ export default function Home() {
             <input
               type="email"
               id="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               placeholder="your@email.com"
             />
@@ -615,15 +645,28 @@ export default function Home() {
             <textarea
               id="message"
               rows={4}
+              required
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               placeholder="Hi Farras, I'd like to talk about..."
             ></textarea>
           </div>
+
+          {/* Pesan status */}
+          {status === "success" && (
+            <p className="text-emerald-500 text-sm">Pesan berhasil dikirim!</p>
+          )}
+          {status === "error" && (
+            <p className="text-red-500 text-sm">Gagal mengirim pesan.</p>
+          )}
+
           <button
-            type="button"
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 rounded-lg transition-colors shadow-lg shadow-emerald-900/20"
+            type="submit" // Ubah dari "button" menjadi "submit"
+            disabled={status === "loading"}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 rounded-lg transition-colors shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Send Message
+            {status === "loading" ? "Mengirim..." : "Send Message"}
           </button>
         </form>
         <div className="flex justify-center gap-6 border-t border-gray-800 pt-8">
